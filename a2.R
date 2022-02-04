@@ -105,56 +105,58 @@ summary(reg3)
 
 # ============ Exercise 3 Numerical Optimization ==============
 #(a)
-# Import the data of 2007 and get rid of all Inactive labors.
-datind2007 <- subset(datind2007.csv, select = c("empstat", "age", "wage"))
-datind2007 <- na.omit(datind2007) %>% filter(age > 0, wage != 0, empstat != "Inactive", empstat != "Retired")
+# Import the data of 2007 and get rid of all Inactive/Retired labors.
+datind2007 <- datind2007.csv %>% filter(age > 0, wage != 0, empstat != "Inactive", empstat != "Retired") 
 
 #(b)
-datind2007$empstat[which(datind2007$empstat == "Employed")] = 1
-datind2007$empstat[which(datind2007$empstat == "Unemployed")] = 0
+datind2007$empstat[which(datind2007$empstat == "Employed")] = 1 
+datind2007$empstat[which(datind2007$empstat == "Unemployed")] = 0 
 age <- datind2007$age
 empstat <- as.numeric(datind2007$empstat)
-flike <-function(par, age, empstat) {
+
+flike <- function(par, age, empstat) {
   xbeta = par[1] + par[2]*age
-  pr = pnorm(xbeta)
-  # pr = exp(beta)/(1+exp(beta)) logit
-  pr[pr>0.999999] = 0.999999
+  pr = pnorm(xbeta) 
+  pr[pr>0.999999] = 0.999999 
   pr[pr<0.000001] = 0.000001
-  like = empstat*log(pr) + (1-empstat)*log(1-pr)
-  return(-sum(like))
+  like = empstat * log(pr) + (1-empstat) * log(1-pr)
+  return(-sum(like)) 
 }
 
 #(c)
 output3 <- mat.or.vec(100, 3) 
 for (i in 1:100) {
-  start = runif(2, -5, 5)
-  result  = optim(start, fn = flike, method = "BFGS", control = list(trace = 6, maxit = 3000),
-                         age = age, empstat = empstat)
-  
-  output3[i,] = c(result$par, result$value)
+  searchv = runif(2, -5, 5) 
+  result  = optim(searchv, fn = flike, method = "BFGS", 
+                  control = list(trace = 6, maxit = 3000),
+                  age = age, empstat = empstat)
+  output3[i,] = c(result$par, result$value) 
 }
-
+output3 <- as.data.frame(output3)
+output3[which(output3$V3 == min(output3$V3)),] 
 
 #(d)
 wage <- datind2007$wage
-flike2 = function(par, age, wage, empstat) {
-  xbeta = par[1] + par[2]*age +par[3]*wage
-  pr = pnorm(xbeta)
-  # pr = exp(beta)/(1+exp(beta)) logit
-  pr[pr>0.999999] = 0.999999
+flike2 <- function(par, age, wage, empstat) {
+  xbeta = par[1] + par[2]*age + par[3]*wage
+  pr = pnorm(xbeta) 
+  pr[pr>0.999999] = 0.999999 
   pr[pr<0.000001] = 0.000001
-  like = empstat*log(pr) + (1-empstat)*log(1-pr)
-  return(-sum(like))
+  like = empstat * log(pr) + (1-empstat) * log(1-pr)
+  return(-sum(like)) 
 }
-
+ 
 output4 <- mat.or.vec(100, 4) 
 for (i in 1:100) {
-  start = runif(2, -5, 5)
-  result  = optim(start, fn = flike, method = "BFGS", control = list(trace = 6, maxit = 3000),
-                  age = age, empstat = empstat)
-  
-  output3[i,] = c(result$par, result$value)
+  searchv = runif(3, -5, 5) #random starting search value
+  result  = optim(searchv, fn = flike2, method = "BFGS", 
+                  control = list(trace = 6, maxit = 3000),
+                  age = age, wage = wage, empstat = empstat)
+  output4[i,] = c(result$par, result$value) 
 }
+
+output4 <- as.data.frame(output4)
+output4[which(output4$V4 == min(output4$V4)), ] 
 
 
 # ============== Exercise 4 Discrete choice ================
@@ -163,8 +165,7 @@ datind_05_to_15 <- rbind(datind2005.csv, datind2006.csv, datind2007.csv,
                          datind2011.csv, datind2012.csv, datind2013.csv, 
                          datind2014.csv, datind2015.csv)
 #(a)
-datind_05_to_15 <- subset(datind_05_to_15, select = c("year","empstat", "age", "wage"))
-datind_05_to_15 <- na.omit(datind_05_to_18) %>% filter(age > 0, wage != 0, empstat != "Inactive", empstat != "Retired")
+datind_05_to_15 <- na.omit(datind_05_to_15) %>% filter(age > 0, wage != 0, empstat != "Inactive", empstat != "Retired")
 
 #(b)
 # Make dummy variables for employment status
@@ -182,7 +183,6 @@ flike2 <- function(par, age, year5, year6, year7, year8, year9, year10, year11,
           par[7]*year9 + par[8]*year10 + par[9]*year11 + par[10]*year12 + par[11]*year13 + 
           par[12]*year14 + par[13]*year15 
   pr = pnorm(xbeta)
-  # pr = exp(beta)/(1+exp(beta)) logit
   pr[pr>0.999999] = 0.999999
   pr[pr<0.000001] = 0.000001
   like = empstat*log(pr) + (1-empstat)*log(1-pr)
@@ -194,10 +194,9 @@ flike2 <- function(par, age, year5, year6, year7, year8, year9, year10, year11,
 logitlike <- function(par, age, year5, year6, year7, year8, year9, year10, year11,
                    year12, year13, year14, year15, empstat) {
   xbeta = par[1] + par[2]*age + par[3]*year5 + par[4]*year6 + par[5]*year7 + par[6]*year8 +
-    par[7]*year9 + par[8]*year10 + par[9]*year11 + par[10]*year12 + par[11]*year13 + 
-    par[12]*year14 + par[13]*year15 
+          par[7]*year9 + par[8]*year10 + par[9]*year11 + par[10]*year12 + par[11]*year13 + 
+          par[12]*year14 + par[13]*year15 
   pr = exp(xbeta)/(1+exp(xbeta))
-  # pr = exp(beta)/(1+exp(beta)) logit
   pr[pr>0.999999] = 0.999999
   pr[pr<0.000001] = 0.000001
   like = empstat*log(pr) + (1-empstat)*log(1-pr)
@@ -210,16 +209,14 @@ logitlike <- function(par, age, year5, year6, year7, year8, year9, year10, year1
 linearlike <- function(par, age, year5, year6, year7, year8, year9, year10, year11,
                        year12, year13, year14, year15, empstat) {
   xbeta = par[1] + par[2]*age + par[3]*year5 + par[4]*year6 + par[5]*year7 + par[6]*year8 +
-    par[7]*year9 + par[8]*year10 + par[9]*year11 + par[10]*year12 + par[11]*year13 + 
-    par[12]*year14 + par[13]*year15 
+          par[7]*year9 + par[8]*year10 + par[9]*year11 + par[10]*year12 + par[11]*year13 + 
+          par[12]*year14 + par[13]*year15 
   pr = xbeta
-  # pr = exp(beta)/(1+exp(beta)) logit
   pr[pr>0.999999] = 0.999999
   pr[pr<0.000001] = 0.000001
   like = empstat*log(pr) + (1-empstat)*log(1-pr)
   return(-sum(like))
 }
-
 
 
 # =============== Exercise 5 Marginal Effects =================
