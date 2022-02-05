@@ -176,24 +176,22 @@ fprobit <- function(par, age2, year, empstat2) {
 }
 
 output5 <- mat.or.vec(100, 5)
- for (i in 1:100) {
+for (i in 1:100) {
   start_point = runif(4, -10, 10)
   result = optim(start_point, fn = fprobit, method = "BFGS", 
                  control = list(trace = 6, maxit = 3000), 
                  age = datind_05_to_15$age, year = datind_05_to_15$year, 
                  empstat = as.numeric(datind_05_to_15$empstat), hessian = TRUE)
   output5[i, ] = c(result$par, result$value)
-
 }
 
 output5 <- as.data.frame(output5)
 output5[which.max(output5$V5 == min(output5$V5)), ]
-fisher_info = solve(result$hessian)      
-prop_sigma  = sqrt(diag(fisher_info))
-est = cbind(par,summary(reg1)$coefficients[, 1],summary(reg1)$coefficients[, 2],res$par,prop_sigma)
-colnames(est) = c("True parameter","R: GLM : est","R: GLM :se","R: own : est","R: own :se")
-est
-
+# solve(hessian[[as.numeric(row.names(output5))])
+# sigma  = sqrt(diag(name))
+# z =output/sigma
+#est = cbind(par,summary(reg1)$coefficients[, 1],summary(reg1)$coefficients[, 2],res$par,prop_sigma)
+#colnames(est) = c("True parameter","R: GLM : est","R: GLM :se","R: own : est","R: own :se")
 # =============== Logit Model ================
 
 flogit <- function(par, age2, year, empstat2) {
@@ -214,6 +212,7 @@ for (i in 1:100) {
                  age = datind_05_to_15$age, year = datind_05_to_15$year, 
                  empstat = as.numeric(datind_05_to_15$empstat), hessian = TRUE)
   output6[i, ] = c(result$par, result$value)
+  result$hessian
 }
 
 output6 <- as.data.frame(output6)
@@ -244,7 +243,6 @@ output7 <- as.data.frame(output7)
 output7[which.max(output7$V5 == min(output7$V5)), ]
 
 
-
 # =============== Exercise 5 Marginal Effects =================
 
 #  ========== Probit Model =============
@@ -270,22 +268,21 @@ m_probit <- function(fun, data, reps = 100, digits = 3) {
 m_probit(fun <- empstat2 ~ age2 + year, data <- datind_05_to_15)
 
 #  ========== Logit Model =============
-m_logit <- function(fun, data, reps = 100, digits = 3) {
-  x <- glm(fun, data, family = binomial(link = "logit"))
+m_logit <- function(formula, data, reps = 100, digits = 3) {
+  x <- glm(formula, data, family = binomial(link = "logit"))
   pdf_logit <- mean(dlogis(predict(x, type = "link")))
   m_logit <- pdf_logit * coef(x)
-  output7 <- matrix(rep(NA, reps * length(coef(x))), nrow = reps)
+  outputs7 <- matrix(rep(NA, reps * length(coef(x))), nrow = reps)
   for(i in 1:reps) {
     samp = sample(1:dim(data)[1], dim(data)[1], rep = TRUE)
     data_logit = data[samp, ]
-    reg_logit <- glm(fun, data_logit, family = binomial(link = "logit"))
+    reg_logit <- glm(formula, data_logit, family = binomial(link = "logit"))
     pr <- mean(dlogis(predict(reg_logit, type = "link")))
-    output7[i, ] <- pr * coef(reg_logit)
+    outputs7[i, ] <- pr * coef(reg_logit)
   }
-  logit() <- cbind(m_logit, apply(output7, 2, sd))
-  colnames(logit) <- c("Marginal Effect", "SE")  
-  return(logit)
+  ans <- cbind(m_logit, apply(outputs7, 2, sd))
+  colnames(ans) <- c("Marginal Effect", "SE")  
+  return(ans)
 }
 
-m_logit(fun = empstat2 ~ age2 + year, data = datind_05_to_15)
-
+m_logit(formula = empstat2 ~ age2 + year, data = datind_05_to_15)
